@@ -2,393 +2,141 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>コード認証 | メール認証デモ</title>
+  <title>コード認証</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --bg: #050816;
-      --card: #0f172a;
-      --accent: #6366f1;
-      --accent-soft: rgba(99, 102, 241, 0.2);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --success: #22c55e;
-      --danger: #f97373;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      min-height: 100vh;
+      margin: 0;
+      padding: 0;
       background: radial-gradient(circle at top, #1d2440 0, #050816 45%, #020617 100%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, sans-serif;
+      color: #e5e7eb;
       display: flex;
-      align-items: center;
       justify-content: center;
-      padding: 24px;
-    }
-    .glow-orb {
-      position: fixed;
-      width: 420px;
-      height: 420px;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(129, 140, 248, 0.22), transparent 60%);
-      top: -60px;
-      left: -40px;
-      filter: blur(2px);
-      pointer-events: none;
-      z-index: -1;
+      align-items: center;
+      min-height: 100vh;
     }
     .container {
-      width: 100%;
-      max-width: 480px;
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
-      border-radius: 24px;
-      padding: 28px 24px 24px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      box-shadow:
-        0 24px 80px rgba(15, 23, 42, 0.9),
-        0 0 0 1px rgba(15, 23, 42, 0.9);
-      position: relative;
-      overflow: hidden;
-    }
-    .container::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(129, 140, 248, 0.18), transparent 55%);
-      opacity: 0.9;
-      pointer-events: none;
-    }
-    .header {
-      position: relative;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    .badge {
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
+      width: 90%;
+      max-width: 420px;
       background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-    }
-    .badge-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: radial-gradient(circle, #facc15, #eab308);
-      box-shadow: 0 0 12px rgba(250, 204, 21, 0.9);
+      padding: 28px;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
     }
     h1 {
       font-size: 22px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      margin-top: 10px;
+      margin-bottom: 10px;
     }
-    .subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.6;
-    }
-    .email-tag {
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: var(--muted);
-      max-width: 180px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
-      text-align: right;
-    }
-    .form {
-      margin-top: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .label-row {
+    .code-box {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      font-size: 12px;
-      color: var(--muted);
+      margin: 20px 0;
     }
-    .label-row span:first-child {
-      color: var(--text);
-      font-size: 13px;
-    }
-    .code-inputs {
-      display: flex;
-      gap: 10px;
-      justify-content: space-between;
-    }
-    .code-inputs input {
-      width: 100%;
-      max-width: 64px;
-      padding: 10px 0;
+    .code-box input {
+      width: 20%;
+      padding: 14px;
+      font-size: 22px;
       text-align: center;
-      font-size: 20px;
-      font-weight: 600;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.08s ease;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.8);
+      color: #fff;
     }
-    .code-inputs input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.7);
-      background: rgba(15, 23, 42, 0.98);
-      transform: translateY(-1px);
-    }
-    .button {
-      margin-top: 4px;
+    button {
       width: 100%;
-      padding: 11px 14px;
+      padding: 12px;
       border-radius: 999px;
       border: none;
-      background: radial-gradient(circle at top left, #4f46e5, #1d4ed8);
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
       color: white;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      font-size: 15px;
+      font-weight: bold;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow:
-        0 14px 30px rgba(37, 99, 235, 0.55),
-        0 0 0 1px rgba(129, 140, 248, 0.6);
-      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-    }
-    .button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-      box-shadow:
-        0 18px 40px rgba(37, 99, 235, 0.7),
-        0 0 0 1px rgba(129, 140, 248, 0.9);
-    }
-    .button:active {
-      transform: translateY(0);
-      box-shadow:
-        0 10px 24px rgba(15, 23, 42, 0.9),
-        0 0 0 1px rgba(129, 140, 248, 0.9);
-    }
-    .button[disabled] {
-      opacity: 0.6;
-      cursor: default;
-      box-shadow: none;
-      transform: none;
-    }
-    .button span.icon {
-      font-size: 16px;
-    }
-    .hint {
-      margin-top: 10px;
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .hint strong {
-      color: var(--text);
-      font-weight: 500;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
     }
     .error {
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--danger);
-    }
-    .success-banner {
-      margin-top: 16px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(22, 163, 74, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.6);
-      font-size: 12px;
-      color: #bbf7d0;
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 6px;
       display: none;
-      align-items: center;
-      gap: 8px;
     }
-    .success-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
-      background: radial-gradient(circle, #22c55e, #16a34a);
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
-    }
-    @media (max-width: 480px) {
-      .container {
-        padding: 22px 18px 18px;
-        border-radius: 20px;
-      }
-      h1 {
-        font-size: 20px;
-      }
-      .code-inputs {
-        gap: 8px;
-      }
-      .code-inputs input {
-        max-width: 56px;
-      }
+    .success {
+      color: #4ade80;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="glow-orb"></div>
 
   <div class="container">
-    <div class="header">
-      <div>
-        <div class="badge">
-          <span class="badge-dot"></span>
-          <span>Step 2 / Verify</span>
-        </div>
-        <h1>届いた 4 桁コードを入力してください。</h1>
-        <p class="subtitle">
-          メールに記載されている認証コードを、下の入力欄に順番に入力します。<br />
-          正しく入力されると、認証成功のメッセージが表示されます。
-        </p>
-      </div>
-      <div id="emailTag" class="email-tag"></div>
+    <h1>認証コードを入力</h1>
+
+    <div class="code-box">
+      <input id="d1" maxlength="1" />
+      <input id="d2" maxlength="1" />
+      <input id="d3" maxlength="1" />
+      <input id="d4" maxlength="1" />
     </div>
 
-    <form class="form" onsubmit="event.preventDefault(); verifyCode();">
-      <div class="label-row">
-        <span>認証コード</span>
-        <span>4 桁の数字のみ</span>
-      </div>
+    <button onclick="verify()">認証する</button>
 
-      <div class="code-inputs">
-        <input id="d1" type="text" inputmode="numeric" maxlength="1" />
-        <input id="d2" type="text" inputmode="numeric" maxlength="1" />
-        <input id="d3" type="text" inputmode="numeric" maxlength="1" />
-        <input id="d4" type="text" inputmode="numeric" maxlength="1" />
-      </div>
-
-      <button id="submitBtn" class="button" type="submit">
-        <span>認証する</span>
-        <span class="icon">✓</span>
-      </button>
-
-      <div id="error" class="error" style="display:none;"></div>
-
-      <div class="hint">
-        <span><strong>※</strong> Supabase のテーブルに保存されたコードと照合します。</span>
-        <span>デモでは REST API を直接叩いています。</span>
-      </div>
-
-      <div id="success" class="success-banner">
-        <span class="success-dot"></span>
-        <span>認証に成功しました。このまま次のステップへ進めます。</span>
-      </div>
-    </form>
+    <div id="error" class="error"></div>
+    <div id="success" class="success">認証に成功しました！</div>
   </div>
 
   <script>
-    const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"; // ←あとで差し替え
-    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY"; // ←あとで差し替え
+    const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
 
-    const email = localStorage.getItem("email");
-    const emailTag = document.getElementById("emailTag");
-    if (email) {
-      emailTag.textContent = email;
-    } else {
-      emailTag.textContent = "メール未取得";
-    }
-
-    const inputs = ["d1", "d2", "d3", "d4"].map((id) =>
-      document.getElementById(id)
-    );
+    const inputs = ["d1", "d2", "d3", "d4"].map(id => document.getElementById(id));
 
     inputs.forEach((input, index) => {
-      input.addEventListener("input", (e) => {
-        const v = e.target.value.replace(/\D/g, "");
-        e.target.value = v;
-        if (v && index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        }
-      });
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Backspace" && !e.target.value && index > 0) {
-          inputs[index - 1].focus();
-        }
+      input.addEventListener("input", () => {
+        if (input.value && index < 3) inputs[index + 1].focus();
       });
     });
 
-    async function verifyCode() {
+    async function verify() {
+      const email = localStorage.getItem("email");
       const errorEl = document.getElementById("error");
       const successEl = document.getElementById("success");
-      const btn = document.getElementById("submitBtn");
 
       errorEl.style.display = "none";
       successEl.style.display = "none";
 
-      if (!email) {
-        errorEl.textContent = "メールアドレス情報が見つかりません。最初の画面からやり直してください。";
-        errorEl.style.display = "block";
-        return;
-      }
+      const code = inputs.map(i => i.value).join("");
 
-      const code = inputs.map((i) => i.value).join("");
       if (code.length !== 4) {
-        errorEl.textContent = "4 桁すべて入力してください。";
+        errorEl.textContent = "4桁すべて入力してください。";
         errorEl.style.display = "block";
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = "認証中...";
-
-      try {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${encodeURIComponent(
-            email
-          )}`,
-          {
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/verification_codes?email=eq.${email}`,
+        {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
           }
-        );
-
-        const data = await res.json();
-
-        if (!data[0] || data[0].code !== code) {
-          errorEl.textContent = "コードが一致しません。もう一度確認してください。";
-          errorEl.style.display = "block";
-          return;
         }
+      );
 
-        successEl.style.display = "flex";
-      } catch (e) {
-        console.error(e);
-        errorEl.textContent = "認証に失敗しました。設定やネットワークを確認してください。";
+      const data = await res.json();
+
+      if (!data[0] || data[0].code !== code) {
+        errorEl.textContent = "コードが一致しません。";
         errorEl.style.display = "block";
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>認証する</span><span class="icon">✓</span>';
+        return;
       }
+
+      successEl.style.display = "block";
     }
   </script>
+
 </body>
 </html>
