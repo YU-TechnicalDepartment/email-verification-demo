@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>4桁コードログイン - Step 2</title>
+  <title>4桁コード認証 - Step 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -23,15 +23,15 @@
       width: 100%;
       max-width: 420px;
       border: 1px solid rgba(148, 163, 184, 0.3);
+      text-align: center;
     }
-    h1 {
-      font-size: 20px;
-      margin: 0 0 8px;
-    }
-    p {
-      font-size: 13px;
-      color: #9ca3af;
-      margin: 0 0 16px;
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { font-size: 13px; color: #9ca3af; margin: 0 0 16px; }
+    .big-code {
+      font-size: 32px;
+      letter-spacing: 0.3em;
+      margin: 12px 0 20px;
+      font-weight: 700;
     }
     .code-row {
       display: flex;
@@ -65,29 +65,19 @@
       font-size: 14px;
       cursor: pointer;
     }
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .status {
-      margin-top: 10px;
-      font-size: 12px;
-      color: #9ca3af;
-      min-height: 16px;
-    }
-    .email-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-bottom: 8px;
-    }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .status { margin-top: 10px; font-size: 12px; color: #9ca3af; min-height: 16px; }
+    .email-label { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>コードを入力</h1>
-    <p>メールに届いた4桁のコードを入力してください。</p>
+    <h1>4桁コード認証</h1>
+    <p>この画面に表示されたコードを、下の入力欄にもう一度入力してください。</p>
 
     <div class="email-label" id="email-label"></div>
+
+    <div class="big-code" id="shown-code">----</div>
 
     <div class="code-row">
       <input id="d1" maxlength="1" inputmode="numeric" />
@@ -112,13 +102,7 @@
     const emailLabel = document.getElementById("email-label");
     const statusEl = document.getElementById("status");
     const verifyButton = document.getElementById("verify");
-
-    if (email) {
-      emailLabel.textContent = `送信先: ${email}`;
-    } else {
-      emailLabel.textContent = "メールアドレス情報が見つかりません。最初からやり直してください。";
-      verifyButton.disabled = true;
-    }
+    const shownCodeEl = document.getElementById("shown-code");
 
     const inputs = [
       document.getElementById("d1"),
@@ -127,7 +111,12 @@
       document.getElementById("d4")
     ];
 
-    // 入力したら自動で次へフォーカス
+    if (email) {
+      emailLabel.textContent = `メールアドレス: ${email}`;
+    } else {
+      emailLabel.textContent = "メールアドレス情報が見つかりません。最初からやり直してください。";
+    }
+
     inputs.forEach((input, idx) => {
       input.addEventListener("input", () => {
         if (input.value && idx < inputs.length - 1) {
@@ -141,34 +130,76 @@
       });
     });
 
-    verifyButton.onclick = async () => {
-      if (!email) return;
+    let generatedCode = null;
+    let currentUserId = null;
 
-      const code = inputs.map(i => i.value.trim()).join("");
-      if (code.length !== 4) {
+    async function init() {
+      statusEl.textContent = "セッション確認中…";
+
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        statusEl.textContent = "認証リンクが無効か、セッションが見つかりません。";
+        verifyButton.disabled = true;
+        return;
+      }
+
+      currentUserId = user.id;
+
+      generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+      shownCodeEl.textContent = generatedCode.split("").join(" ");
+
+      const { error: upsertError } = await supabase
+        .from("profiles")
+        .upsert({ id: currentUserId, otp_code: generatedCode });
+
+      if (upsertError) {
+        console.error(upsertError);
+        statusEl.textContent = "コードの保存に失敗しました。";
+        verifyButton.disabled = true;
+        return;
+      }
+
+      statusEl.textContent = "コードを確認して、下に入力してください。";
+      inputs[0].focus();
+    }
+
+    verifyButton.onclick = async () => {
+      if (!currentUserId) return;
+
+      const inputCode = inputs.map(i => i.value.trim()).join("");
+      if (inputCode.length !== 4) {
         statusEl.textContent = "4桁すべて入力してください。";
         return;
       }
 
+      statusEl.textContent = "確認中…";
       verifyButton.disabled = true;
-      statusEl.textContent = "認証中…";
 
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: "email"
-      });
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("otp_code")
+        .eq("id", currentUserId)
+        .single();
 
-      if (error) {
+      if (error || !data) {
         console.error(error);
-        statusEl.textContent = "コードが違うか、有効期限が切れています。";
+        statusEl.textContent = "コードの確認に失敗しました。";
         verifyButton.disabled = false;
-      } else {
+        return;
+      }
+
+      if (data.otp_code === inputCode) {
         statusEl.textContent = "認証成功！";
-        // ここで次のページに飛ばしたり、状態を保存したりできる
-        // 例: window.location.href = "dashboard.html";
+        // ここで次のページへ遷移など
+        // window.location.href = "dashboard.html";
+      } else {
+        statusEl.textContent = "コードが違います。";
+        verifyButton.disabled = false;
       }
     };
+
+    init();
   </script>
 </body>
 </html>
