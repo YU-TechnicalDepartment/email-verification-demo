@@ -2,58 +2,64 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>メールで認証 - Step 1</title>
+  <title>ログイン</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1f2937, #020617);
-      color: #e5e7eb;
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
       display: flex;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      align-items: center;
+      height: 100vh;
       margin: 0;
     }
     .card {
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 16px;
-      padding: 24px 28px;
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 12px;
       width: 100%;
-      max-width: 420px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
+      max-width: 360px;
+      text-align: center;
+      border: 1px solid #334155;
     }
-    h1 { font-size: 20px; margin: 0 0 8px; }
-    p { font-size: 13px; color: #9ca3af; margin: 0 0 16px; }
-    label { font-size: 13px; display: block; margin-bottom: 6px; }
-    input[type="email"] {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      border: 1px solid #4b5563; background: #020617; color: #e5e7eb;
-      font-size: 14px; box-sizing: border-box;
-    }
-    input[type="email"]:focus {
-      outline: 2px solid #38bdf8; border-color: #38bdf8;
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 14px;
     }
     button {
-      margin-top: 16px; width: 100%; padding: 10px 12px;
-      border-radius: 999px; border: none;
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      color: white; font-weight: 600; font-size: 14px; cursor: pointer;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #3b82f6;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
     }
-    button:disabled { opacity: 0.5; cursor: default; }
-    .status { margin-top: 10px; font-size: 12px; color: #9ca3af; min-height: 16px; }
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>メールで認証</h1>
-    <p>メールアドレスを入力すると、認証用リンクを送信します。</p>
+    <h2>ログイン</h2>
+    <p>メールアドレスを入力してください</p>
 
-    <label for="email">メールアドレス</label>
-    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+    <input id="email" type="email" placeholder="you@example.com" />
+    <button id="send">Magic Link を送信</button>
 
-    <button id="send">リンクを送信</button>
     <div class="status" id="status"></div>
   </div>
 
@@ -76,24 +82,18 @@
         return;
       }
 
-      sendButton.disabled = true;
       statusEl.textContent = "送信中…";
 
       const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: "https://mail.3y.f5.si/verify.html"
-        }
+        email: email
       });
 
       if (error) {
-        console.error(error);
         statusEl.textContent = "送信に失敗しました。しばらくしてから再度お試しください。";
-        sendButton.disabled = false;
-      } else {
-        localStorage.setItem("email", email);
-        statusEl.textContent = "メールを送信しました。メール内のリンクを開いてください。";
+        return;
       }
+
+      statusEl.textContent = "メールを送信しました！受信ボックスを確認してください。";
     };
   </script>
 </body>
