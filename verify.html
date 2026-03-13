@@ -28,7 +28,7 @@
     h1 { font-size: 20px; margin: 0 0 8px; }
     p { font-size: 13px; color: #9ca3af; margin: 0 0 16px; }
     .big-code {
-      font-size: 32px;
+      font-size: 36px;
       letter-spacing: 0.3em;
       margin: 12px 0 20px;
       font-weight: 700;
@@ -133,13 +133,22 @@
     let generatedCode = null;
     let currentUserId = null;
 
+    async function waitForSession() {
+      for (let i = 0; i < 20; i++) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) return user;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return null;
+    }
+
     async function init() {
       statusEl.textContent = "セッション確認中…";
 
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const user = await waitForSession();
 
-      if (error || !user) {
-        statusEl.textContent = "認証リンクが無効か、セッションが見つかりません。";
+      if (!user) {
+        statusEl.textContent = "セッションが見つかりません。リンクが無効かもしれません。";
         verifyButton.disabled = true;
         return;
       }
@@ -154,7 +163,6 @@
         .upsert({ id: currentUserId, otp_code: generatedCode });
 
       if (upsertError) {
-        console.error(upsertError);
         statusEl.textContent = "コードの保存に失敗しました。";
         verifyButton.disabled = true;
         return;
@@ -183,7 +191,6 @@
         .single();
 
       if (error || !data) {
-        console.error(error);
         statusEl.textContent = "コードの確認に失敗しました。";
         verifyButton.disabled = false;
         return;
@@ -191,8 +198,6 @@
 
       if (data.otp_code === inputCode) {
         statusEl.textContent = "認証成功！";
-        // ここで次のページへ遷移など
-        // window.location.href = "dashboard.html";
       } else {
         statusEl.textContent = "コードが違います。";
         verifyButton.disabled = false;
