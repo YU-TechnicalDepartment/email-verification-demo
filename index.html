@@ -7,58 +7,57 @@
   <style>
     body {
       font-family: system-ui, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
+      background: radial-gradient(circle at top, #1f2937, #020617);
+      color: #e5e7eb;
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: center;
+      min-height: 100vh;
       margin: 0;
     }
     .card {
-      background: #1e293b;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 16px;
       padding: 32px;
-      border-radius: 12px;
       width: 100%;
-      max-width: 360px;
+      max-width: 420px;
       text-align: center;
-      border: 1px solid #334155;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
     }
+    h1 { margin-bottom: 8px; }
+    p { margin-bottom: 20px; color: #94a3b8; }
     input {
       width: 100%;
       padding: 12px;
-      margin-bottom: 16px;
-      border-radius: 8px;
+      border-radius: 12px;
       border: 1px solid #475569;
       background: #0f172a;
-      color: #e2e8f0;
+      color: #e5e7eb;
+      margin-bottom: 16px;
       font-size: 14px;
     }
     button {
       width: 100%;
       padding: 12px;
-      border-radius: 8px;
+      border-radius: 999px;
       border: none;
-      background: #3b82f6;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
       color: white;
-      font-size: 15px;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
+      font-size: 15px;
     }
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #94a3b8;
-    }
+    .status { margin-top: 12px; font-size: 13px; color: #94a3b8; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>ログイン</h2>
-    <p>メールアドレスを入力してください</p>
+    <h1>ログイン</h1>
+    <p>Magic Link をメールで送信します</p>
 
     <input id="email" type="email" placeholder="you@example.com" />
-    <button id="send">Magic Link を送信</button>
+    <button id="send">送信する</button>
 
     <div class="status" id="status"></div>
   </div>
@@ -85,7 +84,10 @@
       statusEl.textContent = "送信中…";
 
       const { error } = await supabase.auth.signInWithOtp({
-        email: email
+        email: email,
+        options: {
+          emailRedirectTo: "https://mail.3y.f5.si/"
+        }
       });
 
       if (error) {
