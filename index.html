@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>メール認証デモ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --card: #0f172a;
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.2);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1d2440 0, #050816 45%, #020617 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .glow-orb {
+      position: fixed;
+      width: 420px;
+      height: 420px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.18), transparent 60%);
+      top: -80px;
+      right: -40px;
+      filter: blur(2px);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+      border-radius: 24px;
+      padding: 28px 24px 24px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow:
+        0 24px 80px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
+    .container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(129, 140, 248, 0.18), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .header {
+      position: relative;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e, #16a34a);
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.9);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-top: 10px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+    .card {
+      position: relative;
+      margin-top: 18px;
+      padding: 18px 16px 16px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    }
+    .card-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .card-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card-main-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-main-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .card-main-value {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+    }
+    .form {
+      margin-top: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .label-row span:first-child {
+      color: var(--text);
+      font-size: 13px;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    input[type="email"] {
+      width: 100%;
+      padding: 12px 40px 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    input[type="email"]::placeholder {
+      color: rgba(148, 163, 184, 0.8);
+    }
+    input[type="email"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.7);
+      background: rgba(15, 23, 42, 0.98);
+    }
+    .input-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .button {
+      margin-top: 4px;
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 999px;
+      border: none;
+      background: radial-gradient(circle at top left, #4f46e5, #1d4ed8);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow:
+        0 14px 30px rgba(37, 99, 235, 0.55),
+        0 0 0 1px rgba(129, 140, 248, 0.6);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+    .button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow:
+        0 18px 40px rgba(37, 99, 235, 0.7),
+        0 0 0 1px rgba(129, 140, 248, 0.9);
+    }
+    .button:active {
+      transform: translateY(0);
+      box-shadow:
+        0 10px 24px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(129, 140, 248, 0.9);
+    }
+    .button[disabled] {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+    .button span.icon {
+      font-size: 16px;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hint strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .error {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--danger);
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text);
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      z-index: 20;
+    }
+    .toast.show {
+      display: inline-flex;
+    }
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e, #16a34a);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 22px 18px 18px;
+        border-radius: 20px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      .card-main-value {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb"></div>
+
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span>Verification Flow Demo</span>
+        </div>
+        <h1>メールで始まる、ちょっと未来っぽい認証。</h1>
+        <p class="subtitle">
+          メールアドレスを入力すると、4桁の認証コードが届きます。<br />
+          コードを入力して、スムーズな認証体験を試してみてください。
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Flow Overview</div>
+      <div class="card-main">
+        <div class="card-main-left">
+          <div class="card-main-label">Step 1</div>
+          <div class="card-main-value">メールを送信</div>
+        </div>
+        <div class="pill">4桁コード / HTMLメール</div>
+      </div>
+    </div>
+
+    <form class="form" onsubmit="event.preventDefault(); sendCode();">
+      <div class="label-row">
+        <span>メールアドレス</span>
+        <span>GitHub Pages から Supabase Edge Function を呼び出します</span>
+      </div>
+      <div class="input-wrap">
+        <input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        />
+        <span class="input-icon">✉️</span>
+      </div>
+
+      <button id="submitBtn" class="button" type="submit">
+        <span>認証コードを送信</span>
+        <span class="icon">➜</span>
+      </button>
+
+      <div id="error" class="error" style="display:none;"></div>
+
+      <div class="hint">
+        <span><strong>※</strong> 実際のメール送信は Supabase 側の設定が必要です。</span>
+        <span>このページはフロントエンドのデモとして動作します。</span>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast">
+    <span class="toast-dot"></span>
+    <span>認証コードを送信しました。メールボックスを確認してください。</span>
+  </div>
+
+  <script>
+    const SUPABASE_FUNCTION_URL =
+      "https://YOUR-PROJECT.supabase.co/functions/v1/send-code"; // ←あとで差し替え
+
+    async function sendCode() {
+      const emailInput = document.getElementById("email");
+      const errorEl = document.getElementById("error");
+      const btn = document.getElementById("submitBtn");
+      const toast = document.getElementById("toast");
+
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+
+      const email = emailInput.value.trim();
+      if (!email) {
+        errorEl.textContent = "メールアドレスを入力してください。";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "送信中...";
+
+      try {
+        // ★ Supabase Edge Function に POST
+        await fetch(SUPABASE_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        // メールアドレスを保存して verify.html で使う
+        localStorage.setItem("email", email);
+
+        // トースト表示
+        toast.classList.add("show");
+        setTimeout(() => {
+          toast.classList.remove("show");
+          // コード入力ページへ
+          window.location.href = "verify.html";
+        }, 1200);
+      } catch (e) {
+        console.error(e);
+        errorEl.textContent = "送信に失敗しました。URL やネットワークを確認してください。";
+        errorEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>認証コードを送信</span><span class="icon">➜</span>';
+      }
+    }
+  </script>
+</body>
+</html>
