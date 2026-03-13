@@ -24,14 +24,19 @@
       "YOUR_SUPABASE_ANON_KEY"
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    // ① Magic Link のセッションが保存されるのを待つ
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        document.getElementById("title").textContent =
+          `${session.user.email} としてログイン中`;
+      }
+    });
 
+    // ② すでにログイン済みなら即表示
+    const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       document.getElementById("title").textContent =
         `${user.email} としてログイン中`;
-    } else {
-      document.getElementById("title").textContent =
-        "ログインしていません。";
     }
   </script>
 </body>
