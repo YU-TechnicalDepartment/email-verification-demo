@@ -2,114 +2,134 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>メール認証デモ</title>
+  <title>4桁コードログイン - Step 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at top, #1d2440 0, #050816 45%, #020617 100%);
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937, #020617);
       color: #e5e7eb;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       min-height: 100vh;
+      margin: 0;
     }
-    .container {
-      width: 90%;
-      max-width: 420px;
+    .card {
       background: rgba(15, 23, 42, 0.9);
-      padding: 28px;
-      border-radius: 20px;
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+      width: 100%;
+      max-width: 420px;
       border: 1px solid rgba(148, 163, 184, 0.3);
-      box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
     }
     h1 {
-      font-size: 22px;
-      margin-bottom: 10px;
+      font-size: 20px;
+      margin: 0 0 8px;
     }
     p {
-      font-size: 14px;
+      font-size: 13px;
       color: #9ca3af;
-      margin-bottom: 20px;
+      margin: 0 0 16px;
     }
-    input {
+    label {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 6px;
+    }
+    input[type="email"] {
       width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.8);
-      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
       font-size: 14px;
-      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+    input[type="email"]:focus {
+      outline: 2px solid #38bdf8;
+      border-color: #38bdf8;
     }
     button {
+      margin-top: 16px;
       width: 100%;
-      padding: 12px;
+      padding: 10px 12px;
       border-radius: 999px;
       border: none;
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
       color: white;
-      font-size: 15px;
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
     }
-    button:hover {
-      filter: brightness(1.1);
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
     }
-    .error {
-      color: #f87171;
-      font-size: 13px;
-      margin-top: 6px;
-      display: none;
+    .status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #9ca3af;
+      min-height: 16px;
     }
   </style>
 </head>
 <body>
+  <div class="card">
+    <h1>メールでログイン</h1>
+    <p>メールアドレスを入力すると、4桁の確認コードを送信します。</p>
 
-  <div class="container">
-    <h1>メール認証</h1>
-    <p>メールアドレスを入力すると、4桁の認証コードが送信されます。</p>
+    <label for="email">メールアドレス</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
 
-    <input id="email" type="email" placeholder="you@example.com" required />
-
-    <button onclick="sendCode()">認証コードを送信</button>
-
-    <div id="error" class="error"></div>
+    <button id="send">コードを送信</button>
+    <div class="status" id="status"></div>
   </div>
 
-  <script>
-    const SUPABASE_FUNCTION_URL = "https://opttdyvobpfqfyrmrjhm.supabase.co/functions/v1/send-code";
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    async function sendCode() {
-      const email = document.getElementById("email").value;
-      const errorEl = document.getElementById("error");
+    const supabase = createClient(
+      "YOUR_SUPABASE_URL",
+      "YOUR_SUPABASE_ANON_KEY"
+    );
 
-      errorEl.style.display = "none";
+    const emailInput = document.getElementById("email");
+    const sendButton = document.getElementById("send");
+    const statusEl = document.getElementById("status");
 
+    sendButton.onclick = async () => {
+      const email = emailInput.value.trim();
       if (!email) {
-        errorEl.textContent = "メールアドレスを入力してください。";
-        errorEl.style.display = "block";
+        statusEl.textContent = "メールアドレスを入力してください。";
         return;
       }
 
-      try {
-        await fetch(SUPABASE_FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email })
-        });
+      sendButton.disabled = true;
+      statusEl.textContent = "送信中…";
 
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true
+        }
+      });
+
+      if (error) {
+        console.error(error);
+        statusEl.textContent = "送信に失敗しました。しばらくしてから再度お試しください。";
+        sendButton.disabled = false;
+      } else {
         localStorage.setItem("email", email);
-        window.location.href = "verify.html";
-      } catch (e) {
-        errorEl.textContent = "送信に失敗しました。設定を確認してください。";
-        errorEl.style.display = "block";
+        statusEl.textContent = "メールを送信しました。コードを確認してください。";
+        // 少し待ってから遷移
+        setTimeout(() => {
+          window.location.href = "verify.html";
+        }, 800);
       }
-    }
+    };
   </script>
-
 </body>
 </html>
