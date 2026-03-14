@@ -28,7 +28,7 @@
     h1 { margin-bottom: 8px; }
     p { margin-bottom: 20px; color: #94a3b8; }
     input {
-      width: 90%;
+      width: 100%;
       padding: 12px;
       border-radius: 12px;
       border: 1px solid #475569;
@@ -47,6 +47,7 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 15px;
+      transition: 0.2s;
     }
     .status { margin-top: 12px; font-size: 13px; color: #94a3b8; }
   </style>
@@ -74,12 +75,25 @@
     const sendButton = document.getElementById("send");
     const statusEl = document.getElementById("status");
 
+    // すでにログイン済みならメールアドレスを表示
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      emailInput.value = user.email;
+      statusEl.textContent = `${user.email} としてログイン中`;
+    }
+
     sendButton.onclick = async () => {
       const email = emailInput.value.trim();
       if (!email) {
         statusEl.textContent = "メールアドレスを入力してください。";
         return;
       }
+
+      // ボタン連打防止
+      sendButton.disabled = true;
+      sendButton.style.opacity = "0.6";
+      sendButton.style.cursor = "not-allowed";
+      sendButton.textContent = "送信中…";
 
       statusEl.textContent = "送信中…";
 
@@ -92,8 +106,17 @@
 
       if (error) {
         statusEl.textContent = "送信に失敗しました。しばらくしてから再度お試しください。";
+        sendButton.disabled = false;
+        sendButton.style.opacity = "1";
+        sendButton.style.cursor = "pointer";
+        sendButton.textContent = "送信する";
         return;
       }
+
+      // 緑のチェックマークに変化
+      sendButton.innerHTML = "✔ 送信完了";
+      sendButton.style.background = "#22c55e";
+      sendButton.style.opacity = "1";
 
       statusEl.textContent = "メールを送信しました！受信ボックスを確認してください。";
     };
