@@ -11,13 +11,20 @@
       color: #e2e8f0;
       padding: 40px;
     }
+    .msg {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #38bdf8;
+    }
   </style>
 </head>
 <body>
   <h1 id="title">現在処理中です…</h1>
-<p id="sub" style="color:#94a3b8; font-size:14px;">
-  数分後にもう一度メールのボタンをクリックしてみてください。
-</p>
+  <p id="sub" style="color:#94a3b8; font-size:14px;">
+    数分後にもう一度メールのボタンをクリックしてみてください。
+  </p>
+
+  <p id="success" class="msg"></p>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
@@ -27,19 +34,27 @@
       "sb_publishable_tdGdBXYKcAf0LMa0Httq0g_KDZqkvu0"
     );
 
-    // ① Magic Link のセッションが保存されるのを待つ
+    function showSuccess(email) {
+      document.getElementById("title").textContent =
+        `${email} としてログイン中`;
+
+      document.getElementById("sub").textContent = "";
+
+      document.getElementById("success").textContent =
+        "認証できました。メールアドレスを入力した画面に戻って操作を続けてください。";
+    }
+
+    // Magic Link のセッションが保存されるのを待つ
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        document.getElementById("title").textContent =
-          `${session.user.email} としてログイン中`;
+        showSuccess(session.user.email);
       }
     });
 
-    // ② すでにログイン済みなら即表示
+    // すでにログイン済みなら即表示
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      document.getElementById("title").textContent =
-        `${user.email} としてログイン中`;
+      showSuccess(user.email);
     }
   </script>
 </body>
