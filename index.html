@@ -50,15 +50,35 @@
       transition: 0.2s;
     }
     .status { margin-top: 12px; font-size: 13px; color: #94a3b8; }
+
+    .checkmark {
+      font-size: 48px;
+      color: #22c55e;
+      margin-bottom: 12px;
+    }
+
+    #logout {
+      margin-top: 20px;
+      background: #ef4444;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>ログイン</h1>
-    <p>Magic Link をメールで送信します</p>
+    <h1 id="title">ログイン</h1>
+    <p id="desc">Magic Link をメールで送信します</p>
 
-    <input id="email" type="email" placeholder="you@example.com" />
-    <button id="send">送信する</button>
+    <div id="form-area">
+      <input id="email" type="email" placeholder="you@example.com" />
+      <button id="send">送信する</button>
+    </div>
+
+    <div id="success-area" style="display:none;">
+      <div class="checkmark">✔</div>
+      <p>送信完了！メールを確認してください。</p>
+    </div>
+
+    <button id="logout" style="display:none;">ログアウト</button>
 
     <div class="status" id="status"></div>
   </div>
@@ -74,14 +94,39 @@
     const emailInput = document.getElementById("email");
     const sendButton = document.getElementById("send");
     const statusEl = document.getElementById("status");
+    const formArea = document.getElementById("form-area");
+    const successArea = document.getElementById("success-area");
+    const logoutBtn = document.getElementById("logout");
+    const titleEl = document.getElementById("title");
+    const descEl = document.getElementById("desc");
 
-    // すでにログイン済みならメールアドレスを表示
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      emailInput.value = user.email;
-      statusEl.textContent = `${user.email} としてログイン中`;
+    // UI 切り替え関数
+    function showLoggedIn(email) {
+      titleEl.textContent = "ログイン中";
+      descEl.textContent = `${email}`;
+      formArea.style.display = "none";
+      successArea.style.display = "none";
+      logoutBtn.style.display = "block";
+      statusEl.textContent = "";
     }
 
+    function showLoggedOut() {
+      titleEl.textContent = "ログイン";
+      descEl.textContent = "Magic Link をメールで送信します";
+      formArea.style.display = "block";
+      successArea.style.display = "none";
+      logoutBtn.style.display = "none";
+      emailInput.value = "";
+      statusEl.textContent = "";
+    }
+
+    // 初期状態チェック
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      showLoggedIn(user.email);
+    }
+
+    // 送信ボタン
     sendButton.onclick = async () => {
       const email = emailInput.value.trim();
       if (!email) {
@@ -89,13 +134,10 @@
         return;
       }
 
-      // ボタン連打防止
-      sendButton.disabled = true;
-      sendButton.style.opacity = "0.6";
-      sendButton.style.cursor = "not-allowed";
-      sendButton.textContent = "送信中…";
-
-      statusEl.textContent = "送信中…";
+      // 送信中 UI
+      formArea.style.display = "none";
+      successArea.style.display = "block";
+      statusEl.textContent = "";
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
@@ -106,19 +148,16 @@
 
       if (error) {
         statusEl.textContent = "送信に失敗しました。しばらくしてから再度お試しください。";
-        sendButton.disabled = false;
-        sendButton.style.opacity = "1";
-        sendButton.style.cursor = "pointer";
-        sendButton.textContent = "送信する";
+        formArea.style.display = "block";
+        successArea.style.display = "none";
         return;
       }
+    };
 
-      // 緑のチェックマークに変化
-      sendButton.innerHTML = "✔ 送信完了";
-      sendButton.style.background = "#22c55e";
-      sendButton.style.opacity = "1";
-
-      statusEl.textContent = "メールを送信しました！受信ボックスを確認してください。";
+    // ログアウト
+    logoutBtn.onclick = async () => {
+      await supabase.auth.signOut();
+      showLoggedOut();
     };
   </script>
 </body>
